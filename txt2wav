@@ -1,0 +1,30 @@
+#!/bin/bash
+# dependencies: pico2wave sox
+
+MAX_OPEN_FILES=1000 # Upper limit on how many wav files we can open for concatenation at a time.
+
+FILE_PREFIX=${1%.*}
+OUTFILE="${1%.*}.wav"
+PARTFILE="${1%.*}.part.wav"
+declare -a lines
+readarray lines -t < "$1"
+
+# Concatenate versioned wav into the intermediate (or final) wav.
+function concat_audio {
+    sox $OUTFILE $(ls | egrep -e $FILE_PREFIX.[0-9]+.wav | sort -V) $PARTFILE
+    mv $PARTFILE $OUTFILE
+    rm $(ls | egrep -e $FILE_PREFIX.[0-9]+.wav | sort -V) &>/dev/null
+}
+
+pico2wave -w $OUTFILE "${lines[0]}" # Turn the first line into an intermediate final wav.
+
+for (( i=1; i<${#lines[@]}; i++ )); do
+    # Convert subsequent lines to independent wavs,
+    pico2wave -w "$FILE_PREFIX.$i.wav" "${lines[i]}" 
+    # and gather them into a bigger intermediate wav when the limit on concatenable files is reached.
+    if [ $((i%MAX_OPEN_FILES)) = 0 ]; then
+	concat_audio
+    fi
+done
+
+concat_audio # Make sure to concatenate any remaining lines.

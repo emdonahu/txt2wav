@@ -1,0 +1,4 @@
+This is a BASH script for converting text files into wav files via the pico2wave text-to-speech utility. This script gets around the file size limitation of pico2wave by chopping the text file up into lines, feeding them in one at a time, and concatenating the resulting wav files. The script needs to create many intermediate files, and while it cleans them up afterwards, it is recommended that the text file be processed in its own directory. 
+
+Usage: txt2wav myaudiobook.txt
+(produces in myaudiobook.wav in the same directory)
